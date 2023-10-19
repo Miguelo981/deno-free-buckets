@@ -4,5 +4,5 @@ import { xApiKeyMiddleware } from "./middleware/x-api-key.ts";
 
 export const router = new Router();
 
-router.get("/buckets/:key", handleGetBucket);
-router.post("/buckets/:key", xApiKeyMiddleware, handleSetBucket);
+router.get("/buckets/:bucket/:key", handleGetBucket);
+router.post("/buckets/:bucket/:key", xApiKeyMiddleware, handleSetBucket);
