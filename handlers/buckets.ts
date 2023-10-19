@@ -3,6 +3,14 @@ import { findBucketFile } from "../services/buckets.ts";
 import { Base64 } from "https://deno.land/x/bb64@1.1.0/mod.ts";
 
 export async function handleGetBucket(ctx: Context) {
+  const bucket = ctx.params.bucket;
+
+  if (!bucket) {
+    ctx.response.status = 400;
+    ctx.response.body = "Required bucket param is missing.";
+    return;
+  }
+
   const key = ctx.params.key;
 
   if (!key) {
@@ -11,7 +19,7 @@ export async function handleGetBucket(ctx: Context) {
     return;
   }
 
-  const res = await findBucketFile(key);
+  const res = await findBucketFile(bucket, key);
 
   if (!res || res.value == null) {
     ctx.response.status = 404;
@@ -43,6 +51,14 @@ export async function handleSetBucket(ctx: Context) {
         return;
   }
 
+  const bucket = ctx.params.bucket;
+
+  if (!bucket) {
+    ctx.response.status = 400;
+    ctx.response.body = "Required bucket param is missing.";
+    return;
+  }
+
   const key = ctx.params.key;
 
   if (!key) {
@@ -56,7 +72,7 @@ export async function handleSetBucket(ctx: Context) {
       formData: ["multipart/form-data"],
     },
   }); */
-  const body = await ctx.request.body({ type: 'form-data' });
+  const body = ctx.request.body({ type: 'form-data' });
   console.log(body);
   const data = await body.value.read();
   console.log("readForm", data);

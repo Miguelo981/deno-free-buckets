@@ -1,17 +1,17 @@
 const dbUrl = Deno.env.get('ENV') === 'production' ? Deno.env.get('KV_URL') : './db';
 
-export async function findBucketFile(key: string): Promise<any> {
+export async function findBucketFile(bucket: string, key: string): Promise<any> {
   const kv = await Deno.openKv(dbUrl);
-  const res = await kv.get([key]);
+  const res = await kv.get([bucket, key]);
 
   kv.close();
 
   return res;
 }
 
-export async function setBucketFile(key: string, value: BufferSource) {
+export async function setBucketFile(bucket: string, key: string, value: BufferSource) {
   const kv = await Deno.openKv(dbUrl);
-  const res = await kv.set([key], value);
+  const res = await kv.set([bucket, key], value);
 
   kv.close();
 
