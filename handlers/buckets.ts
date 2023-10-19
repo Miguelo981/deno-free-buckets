@@ -74,8 +74,10 @@ export async function handleSetBucket(ctx: Context) {
   }); */
   const body = ctx.request.body({ type: 'form-data' });
   console.log(body);
-  const data = await body.value.read();
+  const data = await body.value.read({ maxSize: 10_000_000_000_000_000, outPath: '.' });
   console.log("readForm", data);
+  const reqFile = data.files?.[0];
+  console.log(reqFile)
   //const parsedReqBody = Base64.fromUint8Array(data.fields.value!).toString();
   //console.log(parsedReqBody);
 
