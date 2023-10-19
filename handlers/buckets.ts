@@ -37,11 +37,11 @@ export async function handleSetBucket(ctx: Context) {
     return;
   }
 
-  /* if (!ctx.request.headers.get('content-type')?.includes('multipart/form-data')) {
+  if (!ctx.request.headers.get('content-type')?.includes('multipart/form-data')) {
         ctx.response.status = 400;
         ctx.response.body = "Content type must be multipart/form-data.";
         return;
-    } */
+  }
 
   const key = ctx.params.key;
 
@@ -51,19 +51,19 @@ export async function handleSetBucket(ctx: Context) {
     return;
   }
 
-  const body = await ctx.request.body({
+  /* const body = await ctx.request.body({
     contentTypes: {
       formData: ["multipart/form-data"],
     },
-  });
+  }); */
+  const body = await ctx.request.body({ type: 'form-data' });
   console.log(body);
-  const data = await body.value;
-  const readForm = await data.read();
-  console.log("readForm", readForm);
-  const parsedReqBody = Base64.fromUint8Array(data.fields.value!).toString();
-  console.log(parsedReqBody);
+  const data = await body.value.read();
+  console.log("readForm", data);
+  //const parsedReqBody = Base64.fromUint8Array(data.fields.value!).toString();
+  //console.log(parsedReqBody);
 
-  if (!parsedReqBody) {
+  if (!data) {
     ctx.response.status = 400;
     ctx.response.body = "Required value param is missing.";
     return;
