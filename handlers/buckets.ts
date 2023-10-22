@@ -1,5 +1,5 @@
-import { Context } from "https://deno.land/x/oak@v12.6.0/mod.ts";
-import { findBucketFile } from "../services/buckets.ts";
+import { Context } from "https://deno.land/x/oak@v11.1.0/mod.ts";
+import { findBucketFile, setBucketFile } from "../services/buckets.ts";
 import { Base64 } from "https://deno.land/x/bb64@1.1.0/mod.ts";
 
 export async function handleGetBucket(ctx: Context) {
@@ -26,6 +26,8 @@ export async function handleGetBucket(ctx: Context) {
     ctx.response.body = "No file with that key.";
     return;
   }
+
+  const f = new File(res.value);
 
   ctx.response.status = 200;
   ctx.response.body = res.value;
@@ -67,25 +69,28 @@ export async function handleSetBucket(ctx: Context) {
     return;
   }
 
-  /* const body = await ctx.request.body({
-    contentTypes: {
-      formData: ["multipart/form-data"],
-    },
-  }); */
-  const body = ctx.request.body({ type: 'form-data' });
-  console.log(body);
-  const data = await body.value.read({ maxSize: 10_000_000_000_000_000, outPath: '.' });
-  console.log("readForm", data);
-  const reqFile = data.files?.[0];
-  console.log(reqFile)
-  //const parsedReqBody = Base64.fromUint8Array(data.fields.value!).toString();
-  //console.log(parsedReqBody);
+  const formDataReader = ctx.request.body({ type: "form-data" }).value;
+  const formDataBody = await formDataReader.read({ maxSize: 10000000 }); // Max file size to handle
+  const files = formDataBody.files;
+  console.log(files, formDataBody.fields["value"]);
 
-  if (!data) {
+  if (!files) {
     ctx.response.status = 400;
-    ctx.response.body = "Required value param is missing.";
+    ctx.response.body = "Required attached file is missing.";
     return;
   }
+
+  const [file] = files;
+
+  if (!file || !file.content) {
+    ctx.response.status = 400;
+    ctx.response.body = "Required attached file is missing.";
+    return;
+  }
+
+  //const parsedReqBody = Base64.fromUint8Array(file.content);
+
+  setBucketFile(bucket, key, file)
 
   ctx.response.status = 201;
   ctx.response.body = {
