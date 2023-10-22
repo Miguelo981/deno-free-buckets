@@ -3,12 +3,12 @@ import { FormDataFile } from "https://deno.land/x/oak@v12.6.0/mod.ts";
 import { existsSync } from "https://deno.land/std/fs/mod.ts";
 
 const baseDir = "./assets/";
-const dbUrl = Deno.env.get('ENV') === 'production' ? Deno.env.get('KV_URL') : './db';
+/* const dbUrl = Deno.env.get('ENV') === 'production' ? Deno.env.get('KV_URL') : './db';
 
-console.log(dbUrl)
+console.log(dbUrl) */
 
 export async function findBucketFile(bucket: string, key: string): Promise<any> {
-  const kv = await Deno.openKv(dbUrl);
+  const kv = await Deno.openKv();
   
   try {
     const res = await kv.get([bucket, key]);
@@ -22,7 +22,7 @@ export async function findBucketFile(bucket: string, key: string): Promise<any> 
 }
 
 export async function setBucketFile(bucket: string, key: string, value: FormDataFile) {
-  const kv = await Deno.openKv(dbUrl);
+  const kv = await Deno.openKv();
 
   const bucketPath = join(baseDir, bucket)
 
