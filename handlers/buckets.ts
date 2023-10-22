@@ -1,6 +1,5 @@
 import { Context } from "https://deno.land/x/oak@v11.1.0/mod.ts";
 import { findBucketFile, setBucketFile } from "../services/buckets.ts";
-import { Base64 } from "https://deno.land/x/bb64@1.1.0/mod.ts";
 
 export async function handleGetBucket(ctx: Context) {
   const bucket = ctx.params.bucket;
@@ -27,21 +26,34 @@ export async function handleGetBucket(ctx: Context) {
     return;
   }
 
-  const f = new File(res.value);
+  const file = await Deno.readFile(res.value.src);
 
   ctx.response.status = 200;
-  ctx.response.body = res.value;
-  ctx.response.headers.set("Content-Type", "application/stream");
+  ctx.response.body = file;
+  ctx.response.headers.set("Content-Type", res.value.contentType);
   ctx.response.headers.set(
     "Content-Disposition",
-    `attachment; filename="${key}"`
+    `attachment; filename="${res.value.originalName}"`
   );
-  //ctx.response.headers.set('Content-Length', file.byteLength.toString() /* stat.size.toString() */);
+  ctx.response.headers.set('Content-Length', file.byteLength.toString() /* stat.size.toString() */);
 }
 
 export async function handleSetBucket(ctx: Context) {
+  const apiKey = ctx.request.headers.get("x-api-key");
+
+  if (!apiKey) {
+    ctx.response.status = 401;
+    ctx.response.body = "Unauthorized.";
+    return;
+  }
+
+  if (apiKey !== Deno.env.get("X_API_KEY")) {
+    ctx.response.status = 403;
+    ctx.response.body = "Forbidden.";
+    return;
+  }
+
   if (!ctx.request.hasBody) {
-    //ctx.throw(415);
     ctx.response.status = 415;
     ctx.response.body = "Required body is missing.";
     return;
@@ -72,7 +84,6 @@ export async function handleSetBucket(ctx: Context) {
   const formDataReader = ctx.request.body({ type: "form-data" }).value;
   const formDataBody = await formDataReader.read({ maxSize: 10000000 }); // Max file size to handle
   const files = formDataBody.files;
-  console.log(files, formDataBody.fields["value"]);
 
   if (!files) {
     ctx.response.status = 400;
@@ -88,14 +99,18 @@ export async function handleSetBucket(ctx: Context) {
     return;
   }
 
-  //const parsedReqBody = Base64.fromUint8Array(file.content);
+  const res = await setBucketFile(bucket, key, file)
 
-  setBucketFile(bucket, key, file)
+  if (!res) {
+    ctx.response.status = 500;
+    ctx.response.body = "Error setting bucket file.";
+    return;
+  }
 
   ctx.response.status = 201;
   ctx.response.body = {
     message: "Bucket file set.",
-    url: `${Deno.env.get("HOST")}/buckets/${key}`,
+    url: `${Deno.env.get("HOST")}/buckets/${bucket}/${key}`,
   };
   ctx.response.headers.set("Content-Type", "application/json");
 }

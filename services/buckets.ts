@@ -1,26 +1,52 @@
+import { resolve, join } from "https://deno.land/std@0.193.0/path/mod.ts";
 import { FormDataFile } from "https://deno.land/x/oak@v12.6.0/mod.ts";
+import { existsSync } from "https://deno.land/std/fs/mod.ts";
 
+const baseDir = "./assets/";
 const dbUrl = Deno.env.get('ENV') === 'production' ? Deno.env.get('KV_URL') : './db';
 
 export async function findBucketFile(bucket: string, key: string): Promise<any> {
   const kv = await Deno.openKv(dbUrl);
-  const res = await kv.get([bucket, key]);
+  
+  try {
+    const res = await kv.get([bucket, key]);
 
-  // TODO load metadata and parse base64 string to file
-
-  kv.close();
-
-  return res;
+    return res;
+  } catch (err) {
+    console.error(err);
+  } finally {
+    kv.close();
+  }
 }
 
 export async function setBucketFile(bucket: string, key: string, value: FormDataFile) {
   const kv = await Deno.openKv(dbUrl);
 
-  // TODO check file, store metadata and base64 encode file
+  const bucketPath = join(baseDir, bucket)
 
-  const res = await kv.set([bucket, key], value);
+  if (!existsSync(bucketPath)) {
+    Deno.mkdirSync(bucketPath);
+  }
 
-  kv.close();
+  const newFileName = resolve(join(bucketPath, value.originalName));
+  await Deno.writeFile(`${newFileName}`, value.content!);
 
-  return res;
+  const metadata = {
+    name: value.name,
+    type: value.contentType,
+    filename: value.filename,
+    originalName: value.originalName,
+    src: newFileName,
+    createdAt: new Date().toISOString(),
+  }
+
+  try {
+    const res = await kv.set([bucket, key], metadata);
+
+    return res;
+  } catch (err) {
+    console.error(err);
+  } finally {
+    kv.close();
+  }
 }
