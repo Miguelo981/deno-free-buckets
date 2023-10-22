@@ -5,6 +5,8 @@ import { existsSync } from "https://deno.land/std/fs/mod.ts";
 const baseDir = "./assets/";
 const dbUrl = Deno.env.get('ENV') === 'production' ? Deno.env.get('KV_URL') : './db';
 
+console.log(dbUrl)
+
 export async function findBucketFile(bucket: string, key: string): Promise<any> {
   const kv = await Deno.openKv(dbUrl);
   
